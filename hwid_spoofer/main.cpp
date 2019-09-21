@@ -15,7 +15,7 @@ NTSTATUS driver_start( )
 	memory::initialize( L"disk.sys" );
 	const auto DiskEnableDisableFailurePrediction = reinterpret_cast< NTSTATUS( __fastcall* )( PFUNCTIONAL_DEVICE_EXTENSION, BOOLEAN ) >( memory::from_pattern( "\x48\x89\x5c\x24\x00\x48\x89\x74\x24\x00\x57\x48\x81\xec\x00\x00\x00\x00\x48\x8b\x05\x00\x00\x00\x00\x48\x33\xc4\x48\x89\x84\x24\x00\x00\x00\x00\x48\x8b\x59\x60\x48\x8b\xf1\x40\x8a\xfa\x8b\x4b\x10", "xxxx?xxxx?xxxx????xxx????xxxxxxx????xxxxxxxxxxxxx" ) );
 
-	if ( PVOID( DiskEnableDisableFailurePrediction ) == nullptr )
+	if ( !PVOID( DiskEnableDisableFailurePrediction ) )
 		return STATUS_UNSUCCESSFUL;
 
 	memory::initialize( L"storport.sys" );
