@@ -84,5 +84,7 @@ NTSTATUS driver_start( )
 		RaidUnitRegisterInterfaces( raid_extension );
 	}
 	
+	ObfDereferenceObject( disk_object );
+	
 	return STATUS_SUCCESS;
 }
