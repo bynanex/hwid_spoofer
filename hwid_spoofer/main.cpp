@@ -6,14 +6,14 @@
 
 NTSTATUS driver_start( )
 {
-	PDRIVER_OBJECT disk_object = nullptr;
+	std::unique_ptr< DRIVER_OBJECT, decltype( &ObfDereferenceObject ) > disk_object( nullptr, &ObfDereferenceObject );
 	
 	UNICODE_STRING driver_unicode{};
 	RtlInitUnicodeString( &driver_unicode, L"\\Driver\\Disk" );
 	
-	ObReferenceObjectByName( &driver_unicode, OBJ_CASE_INSENSITIVE, nullptr, 0, *IoDriverObjectType, KernelMode, nullptr, reinterpret_cast< void** >( &disk_object ) );
+	ObReferenceObjectByName( &driver_unicode, OBJ_CASE_INSENSITIVE, nullptr, 0, *IoDriverObjectType, KernelMode, nullptr, reinterpret_cast< void** >( disk_object.get( ) ) );
 
-	if ( !disk_object )
+	if ( !disk_object.get( ) )
 		return STATUS_UNSUCCESSFUL;
 
 	memory::initialize( L"disk.sys" );
