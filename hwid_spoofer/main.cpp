@@ -49,7 +49,7 @@ NTSTATUS driver_start( )
 		if ( !raid_extension )
 			continue;
 
-		PSTOR_SCSI_IDENTITY identity = reinterpret_cast< PSTOR_SCSI_IDENTITY >( std::uintptr_t( raid_extension ) + 0x68 ); // this offset changes per windows build, you figure it out
+		const auto identity = reinterpret_cast< PSTOR_SCSI_IDENTITY >( std::uintptr_t( raid_extension ) + 0x68 ); // this offset changes per windows build, you figure it out
 		
 		if ( !identity )
 			continue;
