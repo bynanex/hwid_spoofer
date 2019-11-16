@@ -112,38 +112,3 @@ namespace serializer
 		}
 	}
 }
-namespace util
-{
-	void reference_driver_by_name(const wchar_t* driver_name, PDRIVER_OBJECT* driver_object)
-	{
-		UNICODE_STRING driver_unicode{};
-		RtlInitUnicodeString( &driver_unicode, driver_name );
-
-		PDRIVER_OBJECT driver_local = nullptr;
-		ObReferenceObjectByName( &driver_unicode, OBJ_CASE_INSENSITIVE, nullptr, 0, *IoDriverObjectType, KernelMode, nullptr, reinterpret_cast< void** >( &driver_local ) );
-
-		*driver_object = driver_local;	
-	}
-	std::uint32_t get_windows_version( )
-	{
-		RTL_OSVERSIONINFOW version_info = { 0 };
-		version_info.dwOSVersionInfoSize = sizeof( RTL_OSVERSIONINFOW );
-
-		if ( !NT_SUCCESS( RtlGetVersion( &version_info ) ) )
-			return 0;
-
-		if ( version_info.dwBuildNumber > 16169 && version_info.dwBuildNumber < 16300 )
-			return 1709;
-		
-		if ( version_info.dwBuildNumber > 16352 && version_info.dwBuildNumber < 17135 )
-			return 1803;
-
-		if ( version_info.dwBuildNumber > 17603 && version_info.dwBuildNumber < 17765 )
-			return 1809;
-
-		if ( version_info.dwBuildNumber >= 18360 )
-			return 1903;
-
-		return 0;
-	}
-}
