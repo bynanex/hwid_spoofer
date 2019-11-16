@@ -7,15 +7,19 @@
 NTSTATUS driver_start( )
 {
 	PDRIVER_OBJECT disk_object = nullptr;
-	util::reference_driver_by_name( L"\\Driver\\Disk", &disk_object );
+	
+	UNICODE_STRING driver_unicode{};
+	RtlInitUnicodeString( &driver_unicode, L"\\Driver\\Disk" );
+	
+	ObReferenceObjectByName( &driver_unicode, OBJ_CASE_INSENSITIVE, nullptr, 0, *IoDriverObjectType, KernelMode, nullptr, reinterpret_cast< void** >( &disk_object ) );
 
-	if ( disk_object == nullptr )
+	if ( !disk_object )
 		return STATUS_UNSUCCESSFUL;
 
 	memory::initialize( L"disk.sys" );
 	const auto DiskEnableDisableFailurePrediction = reinterpret_cast< NTSTATUS( __fastcall* )( PFUNCTIONAL_DEVICE_EXTENSION, BOOLEAN ) >( memory::from_pattern( "\x48\x89\x5c\x24\x00\x48\x89\x74\x24\x00\x57\x48\x81\xec\x00\x00\x00\x00\x48\x8b\x05\x00\x00\x00\x00\x48\x33\xc4\x48\x89\x84\x24\x00\x00\x00\x00\x48\x8b\x59\x60\x48\x8b\xf1\x40\x8a\xfa\x8b\x4b\x10", "xxxx?xxxx?xxxx????xxx????xxxxxxx????xxxxxxxxxxxxx" ) );
 
-	if ( !PVOID( DiskEnableDisableFailurePrediction ) )
+	if ( !DiskEnableDisableFailurePrediction )
 		return STATUS_UNSUCCESSFUL;
 
 	memory::initialize( L"storport.sys" );
@@ -26,10 +30,7 @@ NTSTATUS driver_start( )
 
 	const auto RaidUnitRegisterInterfaces = reinterpret_cast< NTSTATUS( __fastcall* )( RAID_UNIT_EXTENSION* ) >( RaidUnitRegisterInterfaces_address + 5 + *reinterpret_cast< std::int32_t* >( RaidUnitRegisterInterfaces_address + 1 ) );
 
-	LARGE_INTEGER seed_large{};
-	KeQuerySystemTimePrecise( &seed_large );
-
-	const auto seed = seed_large.LowPart ^ seed_large.HighPart;
+	const auto seed = __rdtsc( );
 
 	for (auto current_object = disk_object->DeviceObject; current_object != nullptr; current_object = current_object->NextDevice )
 	{
@@ -48,22 +49,8 @@ NTSTATUS driver_start( )
 		if ( !raid_extension )
 			continue;
 
-		PSTOR_SCSI_IDENTITY identity = nullptr;
-
-		switch ( util::get_windows_version( ) )
-		{
-			case 1709:
-			case 1803:
-				identity = reinterpret_cast< PSTOR_SCSI_IDENTITY >( std::uintptr_t( raid_extension ) + 0x60 );
-				break;
-			case 1809:
-			case 1903:
-				identity = reinterpret_cast< PSTOR_SCSI_IDENTITY >( std::uintptr_t( raid_extension ) + 0x68 );
-				break;
-			default:
-				break;
-		}
-
+		PSTOR_SCSI_IDENTITY identity = reinterpret_cast< PSTOR_SCSI_IDENTITY >( std::uintptr_t( raid_extension ) + 0x68 ); // this offset changes per windows build, you figure it out
+		
 		if ( !identity )
 			continue;
 
